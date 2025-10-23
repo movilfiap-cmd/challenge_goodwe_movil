@@ -41,6 +41,8 @@ except Exception:
     tinytuya = None  # type: ignore
 
 
+openweather_api_key = os.getenv("OPENWEATHER_API_KEY")
+
 @dataclass
 class Device:
     """Representa um dispositivo monitorado.
@@ -91,7 +93,7 @@ class EnergyManagerApp:
         # fornecida nos requisitos; o usuário pode alterá-la em tempo
         # real pela interface.
         self.openweather_api_key: tk.StringVar = tk.StringVar(
-            value="2f795031b150ef93e9de60f235c63711"
+            value=openweather_api_key
         )
         # Cidade/pais para consulta de previsão. Pode ser alterada.
         self.city_var: tk.StringVar = tk.StringVar(value="Sao Paulo,BR")

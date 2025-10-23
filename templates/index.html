@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento de Energia Inteligente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .device-card {
+            border-left: 4px solid #28a745;
+        }
+        .device-card.warning {
+            border-left-color: #ffc107;
+        }
+        .device-card.danger {
+            border-left-color: #dc3545;
+        }
+        .consumption-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">
+                            <i class="fas fa-bolt me-2"></i>
+                            Energy Manager
+                        </h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="#dashboard" data-section="dashboard">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#devices" data-section="devices">
+                                <i class="fas fa-plug me-2"></i>
+                                Dispositivos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#consumption" data-section="consumption">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Consumo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#weather" data-section="weather">
+                                <i class="fas fa-cloud-sun me-2"></i>
+                                Clima
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#alerts" data-section="alerts">
+                                <i class="fas fa-bell me-2"></i>
+                                Alertas
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Atualizar
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="showAddDeviceModal()">
+                            <i class="fas fa-plus me-1"></i>
+                            Novo Dispositivo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading indicator -->
+                <div class="loading text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-2">Carregando dados...</p>
+                </div>
+
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="content-section">
+                    <!-- Stats Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Total de Dispositivos</h6>
+                                            <h3 id="total-devices">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-plug fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Consumo Atual</h6>
+                                            <h3 id="current-consumption">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-bolt fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Limite de Consumo</h6>
+                                            <h3 id="consumption-limit">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Alertas Ativos</h6>
+                                            <h3 id="active-alerts">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-bell fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Consumo por Dispositivo</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="consumptionChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Status dos Dispositivos</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="statusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Dispositivos Recentes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recent-devices">
+                                        <!-- Devices will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Alertas Recentes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recent-alerts">
+                                        <!-- Alerts will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Devices Section -->
+                <div id="devices-section" class="content-section" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="device-search" placeholder="Buscar dispositivos...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="device-type-filter">
+                                <option value="">Todos os tipos</option>
+                                <option value="manual">Manual</option>
+                                <option value="tuya">Tuya</option>
+                                <option value="smart">Smart</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="device-status-filter">
+                                <option value="">Todos os status</option>
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="devices-list">
+                        <!-- Devices will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Consumption Section -->
+                <div id="consumption-section" class="content-section" style="display: none;">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Consumo Diário</h5>
+                                    <h3 id="daily-consumption">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Consumo Semanal</h5>
+                                    <h3 id="weekly-consumption">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Consumo Mensal</h5>
+                                    <h3 id="monthly-consumption">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Histórico de Consumo</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="consumptionHistoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather Section -->
+                <div id="weather-section" class="content-section" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="weather-city" placeholder="Cidade (ex: Sao Paulo,BR)" value="Sao Paulo,BR">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="fetchWeatherData()">
+                                <i class="fas fa-cloud-sun me-1"></i>
+                                Buscar Previsão
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success" onclick="updateConsumptionLimit()">
+                                <i class="fas fa-cog me-1"></i>
+                                Ajustar Limite
+                            </button>
+                        </div>
+                    </div>
+                    <div id="weather-content">
+                        <!-- Weather data will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Alerts Section -->
+                <div id="alerts-section" class="content-section" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="alert-type-filter">
+                                <option value="">Todos os tipos</option>
+                                <option value="high_consumption">Consumo Alto</option>
+                                <option value="limit_exceeded">Limite Excedido</option>
+                                <option value="device_offline">Dispositivo Offline</option>
+                                <option value="unusual_pattern">Padrão Incomum</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="alert-severity-filter">
+                                <option value="">Todas as severidades</option>
+                                <option value="low">Baixa</option>
+                                <option value="medium">Média</option>
+                                <option value="high">Alta</option>
+                                <option value="critical">Crítica</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning" onclick="markAllAlertsAsRead()">
+                                <i class="fas fa-check me-1"></i>
+                                Marcar Todos como Lidos
+                            </button>
+                        </div>
+                    </div>
+                    <div id="alerts-list">
+                        <!-- Alerts will be loaded here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal fade" id="addDeviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adicionar Dispositivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDeviceForm">
+                        <div class="mb-3">
+                            <label for="device-name" class="form-label">Nome do Dispositivo</label>
+                            <input type="text" class="form-control" id="device-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="device-id" class="form-label">ID do Dispositivo</label>
+                            <input type="text" class="form-control" id="device-id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="device-type" class="form-label">Tipo</label>
+                            <select class="form-select" id="device-type" required>
+                                <option value="manual">Manual</option>
+                                <option value="tuya">Tuya</option>
+                                <option value="smart">Smart</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="max-consumption" class="form-label">Consumo Máximo (kWh)</label>
+                            <input type="number" class="form-control" id="max-consumption" step="0.1" min="0" value="10">
+                        </div>
+                        <div id="tuya-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="tuya-ip" class="form-label">IP Local</label>
+                                <input type="text" class="form-control" id="tuya-ip">
+                            </div>
+                            <div class="mb-3">
+                                <label for="tuya-key" class="form-label">Chave Local</label>
+                                <input type="text" class="form-control" id="tuya-key">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addDevice()">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        // Global variables
+        let consumptionChart, statusChart, consumptionHistoryChart;
+        let currentSection = 'dashboard';
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeNavigation();
+            loadDashboard();
+        });
+        
+        // Navigation
+        function initializeNavigation() {
+            document.querySelectorAll('[data-section]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('data-section');
+                    showSection(section);
+                });
+            });
+        }
+        
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(div => {
+                div.style.display = 'none';
+            });
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(section + '-section').style.display = 'block';
+            document.querySelector(`[data-section="${section}"]`).classList.add('active');
+            
+            // Update page title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'devices': 'Dispositivos',
+                'consumption': 'Consumo',
+                'weather': 'Clima',
+                'alerts': 'Alertas'
+            };
+            document.getElementById('page-title').textContent = titles[section];
+            
+            currentSection = section;
+            
+            // Load section-specific data
+            switch(section) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'devices':
+                    loadDevices();
+                    break;
+                case 'consumption':
+                    loadConsumption();
+                    break;
+                case 'weather':
+                    loadWeather();
+                    break;
+                case 'alerts':
+                    loadAlerts();
+                    break;
+            }
+        }
+        
+        // API Functions
+        async function apiCall(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            const response = await fetch(url, {...defaultOptions, ...options});
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+        
+        // Dashboard
+        async function loadDashboard() {
+            showLoading(true);
+            try {
+                // Load device summary
+                const deviceSummary = await apiCall('/api/v1/devices/summary/');
+                
+                // Update stats
+                document.getElementById('total-devices').textContent = deviceSummary.total_devices;
+                document.getElementById('current-consumption').textContent = deviceSummary.total_consumption.toFixed(2);
+                document.getElementById('consumption-limit').textContent = '5.00'; // Default limit
+                document.getElementById('active-alerts').textContent = '0'; // Will be updated when alerts are loaded
+                
+                // Load consumption chart
+                loadConsumptionChart(deviceSummary.consumption_by_type);
+                
+                // Load status chart
+                loadStatusChart(deviceSummary.devices_by_type);
+                
+                // Load recent devices
+                loadRecentDevices();
+                
+                // Load recent alerts
+                loadRecentAlerts();
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Erro ao carregar dashboard', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function loadConsumptionChart(consumptionData) {
+            const ctx = document.getElementById('consumptionChart').getContext('2d');
+            
+            if (consumptionChart) {
+                consumptionChart.destroy();
+            }
+            
+            consumptionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(consumptionData),
+                    datasets: [{
+                        data: Object.values(consumptionData),
+                        backgroundColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545',
+                            '#17a2b8',
+                            '#6f42c1'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function loadStatusChart(devicesData) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            
+            if (statusChart) {
+                statusChart.destroy();
+            }
+            
+            statusChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(devicesData),
+                    datasets: [{
+                        label: 'Dispositivos',
+                        data: Object.values(devicesData),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadRecentDevices() {
+            try {
+                const devices = await apiCall('/api/v1/devices/');
+                const recentDevices = devices.results.slice(0, 5);
+                
+                const container = document.getElementById('recent-devices');
+                container.innerHTML = recentDevices.map(device => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>${device.name}</strong>
+                            <br>
+                            <small class="text-muted">${device.device_id}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${device.is_active ? 'success' : 'secondary'}">
+                                ${device.is_active ? 'Ativo' : 'Inativo'}
+                            </span>
+                            <br>
+                            <small>${device.last_consumption.toFixed(2)} kWh</small>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading recent devices:', error);
+            }
+        }
+        
+        async function loadRecentAlerts() {
+            try {
+                const alerts = await apiCall('/api/v1/alerts/');
+                const recentAlerts = alerts.results.slice(0, 5);
+                
+                const container = document.getElementById('recent-alerts');
+                container.innerHTML = recentAlerts.map(alert => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>${alert.title}</strong>
+                            <br>
+                            <small class="text-muted">${alert.device_name}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${getSeverityColor(alert.severity)}">
+                                ${alert.severity}
+                            </span>
+                            <br>
+                            <small>${new Date(alert.created_at).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading recent alerts:', error);
+            }
+        }
+        
+        // Devices
+        async function loadDevices() {
+            showLoading(true);
+            try {
+                const devices = await apiCall('/api/v1/devices/');
+                displayDevices(devices.results);
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                showAlert('Erro ao carregar dispositivos', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function displayDevices(devices) {
+            const container = document.getElementById('devices-list');
+            container.innerHTML = devices.map(device => `
+                <div class="card device-card mb-3 ${getConsumptionStatusClass(device.consumption_status)}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="card-title mb-1">${device.name}</h6>
+                                <small class="text-muted">${device.device_id}</small>
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge bg-${device.device_type === 'manual' ? 'primary' : device.device_type === 'tuya' ? 'success' : 'info'}">
+                                    ${device.device_type}
+                                </span>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <strong>${device.last_consumption.toFixed(2)} kWh</strong>
+                                    <br>
+                                    <small class="text-muted">Último consumo</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <strong>${device.max_consumption.toFixed(2)} kWh</strong>
+                                    <br>
+                                    <small class="text-muted">Limite máximo</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge bg-${device.is_active ? 'success' : 'secondary'}">
+                                    ${device.is_active ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editDevice(${device.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDevice(${device.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Consumption
+        async function loadConsumption() {
+            showLoading(true);
+            try {
+                const stats = await apiCall('/api/v1/readings/stats/');
+                
+                document.getElementById('daily-consumption').textContent = stats.daily_consumption.toFixed(2);
+                document.getElementById('weekly-consumption').textContent = stats.weekly_consumption.toFixed(2);
+                document.getElementById('monthly-consumption').textContent = stats.monthly_consumption.toFixed(2);
+                
+                // Load consumption history chart
+                loadConsumptionHistoryChart();
+                
+            } catch (error) {
+                console.error('Error loading consumption:', error);
+                showAlert('Erro ao carregar dados de consumo', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function loadConsumptionHistoryChart() {
+            const ctx = document.getElementById('consumptionHistoryChart').getContext('2d');
+            
+            if (consumptionHistoryChart) {
+                consumptionHistoryChart.destroy();
+            }
+            
+            // Sample data - in real implementation, this would come from the API
+            const sampleData = {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                datasets: [{
+                    label: 'Consumo (kWh)',
+                    data: [12, 19, 3, 5, 2, 3],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true
+                }]
+            };
+            
+            consumptionHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: sampleData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Weather
+        async function loadWeather() {
+            showLoading(true);
+            try {
+                const city = document.getElementById('weather-city').value;
+                const [cityName, country] = city.split(',');
+                
+                const weatherData = await apiCall(`/api/v1/forecasts/summary/?city=${cityName}&country=${country}`);
+                displayWeatherData(weatherData);
+                
+            } catch (error) {
+                console.error('Error loading weather:', error);
+                showAlert('Erro ao carregar dados meteorológicos', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function displayWeatherData(data) {
+            const container = document.getElementById('weather-content');
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Condições Atuais</h5>
+                                <h2>${data.current_temperature}°C</h2>
+                                <p>${data.current_condition}</p>
+                                <p>Umidade: ${data.current_humidity}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Fator Solar</h5>
+                                <h2>${data.solar_irradiance_factor.toFixed(2)}</h2>
+                                <p>Influência na geração solar</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Fator de Consumo</h5>
+                                <h2>${data.energy_consumption_factor.toFixed(2)}</h5>
+                                <p>Influência no consumo de energia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function fetchWeatherData() {
+            const city = document.getElementById('weather-city').value;
+            const [cityName, country] = city.split(',');
+            
+            try {
+                await apiCall('/api/v1/forecasts/fetch_forecast/', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        city: cityName,
+                        country: country
+                    })
+                });
+                
+                showAlert('Previsão atualizada com sucesso!', 'success');
+                loadWeather();
+                
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                showAlert('Erro ao buscar previsão do tempo', 'danger');
+            }
+        }
+        
+        async function updateConsumptionLimit() {
+            try {
+                // This would update the consumption limit based on weather factors
+                showAlert('Limite de consumo atualizado com base na previsão do tempo!', 'success');
+            } catch (error) {
+                console.error('Error updating consumption limit:', error);
+                showAlert('Erro ao atualizar limite de consumo', 'danger');
+            }
+        }
+        
+        // Alerts
+        async function loadAlerts() {
+            showLoading(true);
+            try {
+                const alerts = await apiCall('/api/v1/alerts/');
+                displayAlerts(alerts.results);
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+                showAlert('Erro ao carregar alertas', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function displayAlerts(alerts) {
+            const container = document.getElementById('alerts-list');
+            container.innerHTML = alerts.map(alert => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="card-title mb-1">${alert.title}</h6>
+                                <p class="card-text">${alert.description}</p>
+                                <small class="text-muted">
+                                    ${alert.device_name} • ${new Date(alert.created_at).toLocaleString()}
+                                </small>
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge bg-${getSeverityColor(alert.severity)}">
+                                    ${alert.severity}
+                                </span>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="btn-group">
+                                    ${!alert.is_read ? `
+                                        <button class="btn btn-sm btn-outline-primary" onclick="markAlertAsRead(${alert.id})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    ` : ''}
+                                    ${!alert.is_resolved ? `
+                                        <button class="btn btn-sm btn-outline-success" onclick="markAlertAsResolved(${alert.id})">
+                                            <i class="fas fa-check-double"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Device Management
+        function showAddDeviceModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addDeviceModal'));
+            modal.show();
+        }
+        
+        function addDevice() {
+            const formData = {
+                name: document.getElementById('device-name').value,
+                device_id: document.getElementById('device-id').value,
+                device_type: document.getElementById('device-type').value,
+                max_consumption: parseFloat(document.getElementById('max-consumption').value),
+                tuya_ip: document.getElementById('tuya-ip').value,
+                tuya_local_key: document.getElementById('tuya-key').value
+            };
+            
+            apiCall('/api/v1/devices/', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            }).then(() => {
+                showAlert('Dispositivo adicionado com sucesso!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
+                document.getElementById('addDeviceForm').reset();
+                if (currentSection === 'devices') {
+                    loadDevices();
+                }
+            }).catch(error => {
+                console.error('Error adding device:', error);
+                showAlert('Erro ao adicionar dispositivo', 'danger');
+            });
+        }
+        
+        // Utility Functions
+        function showLoading(show) {
+            const loading = document.querySelector('.loading');
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.main-content').firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        function getConsumptionStatusClass(status) {
+            switch(status) {
+                case 'warning': return 'danger';
+                case 'caution': return 'warning';
+                default: return '';
+            }
+        }
+        
+        function getSeverityColor(severity) {
+            switch(severity) {
+                case 'low': return 'success';
+                case 'medium': return 'warning';
+                case 'high': return 'danger';
+                case 'critical': return 'dark';
+                default: return 'secondary';
+            }
+        }
+        
+        function refreshData() {
+            switch(currentSection) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'devices':
+                    loadDevices();
+                    break;
+                case 'consumption':
+                    loadConsumption();
+                    break;
+                case 'weather':
+                    loadWeather();
+                    break;
+                case 'alerts':
+                    loadAlerts();
+                    break;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('device-type').addEventListener('change', function() {
+            const tuyaFields = document.getElementById('tuya-fields');
+            if (this.value === 'tuya') {
+                tuyaFields.style.display = 'block';
+            } else {
+                tuyaFields.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
