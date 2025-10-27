@@ -64,6 +64,27 @@
         .loading.show {
             display: block;
         }
+        .energy-balance-card {
+            transition: all 0.3s ease;
+        }
+        .energy-balance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .surplus-card {
+            border-left: 4px solid #28a745;
+        }
+        .deficit-card {
+            border-left: 4px solid #dc3545;
+        }
+        .balanced-card {
+            border-left: 4px solid #ffc107;
+        }
+        .energy-input-form {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -98,6 +119,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link text-white" href="#production" data-section="production">
+                                <i class="fas fa-solar-panel me-2"></i>
+                                Produção
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link text-white" href="#weather" data-section="weather">
                                 <i class="fas fa-cloud-sun me-2"></i>
                                 Clima
@@ -110,6 +137,14 @@
                             </a>
                         </li>
                     </ul>
+                    
+                    <!-- Logout button -->
+                    <div class="mt-auto pt-3">
+                        <button class="btn btn-outline-light w-100" onclick="logout()">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Sair
+                        </button>
+                    </div>
                 </div>
             </nav>
 
@@ -206,6 +241,53 @@
                         </div>
                     </div>
 
+                    <!-- Auto-Control Status -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-robot me-2"></i>
+                                        Status do Controle Automático
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">Dispositivos Controlados Automaticamente</h6>
+                                                <h4 id="auto-controlled-count" class="text-warning">-</h4>
+                                                <small class="text-muted">Última ação: <span id="last-auto-control-time">-</span></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">Status do Sistema</h6>
+                                                <h4 id="auto-control-status" class="text-success">-</h4>
+                                                <small class="text-muted">Controle automático: <span id="auto-control-enabled-status">-</span></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">Ações Rápidas</h6>
+                                                <div class="btn-group-vertical w-100">
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="loadDevices()">
+                                                        <i class="fas fa-refresh me-1"></i>
+                                                        Atualizar Dispositivos
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-warning" onclick="showMediumPriorityModal()">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                                        Ver Alertas
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Charts -->
                     <div class="row mb-4">
                         <div class="col-md-8">
@@ -292,42 +374,282 @@
 
                 <!-- Consumption Section -->
                 <div id="consumption-section" class="content-section" style="display: none;">
+
+                    <!-- Real-time Energy Balance -->
                     <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-3">
+                            <div class="card energy-balance-card deficit-card">
                                 <div class="card-body text-center">
-                                    <h5>Consumo Diário</h5>
-                                    <h3 id="daily-consumption">-</h3>
+                                    <h5><i class="fas fa-bolt me-2"></i>Consumo Atual</h5>
+                                    <h3 id="current-consumption-display">-</h3>
                                     <small class="text-muted">kWh</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-3">
+                            <div class="card energy-balance-card surplus-card">
                                 <div class="card-body text-center">
-                                    <h5>Consumo Semanal</h5>
-                                    <h3 id="weekly-consumption">-</h3>
+                                    <h5><i class="fas fa-solar-panel me-2"></i>Produção Atual</h5>
+                                    <h3 id="current-production-display">-</h3>
                                     <small class="text-muted">kWh</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-md-3">
+                            <div class="card energy-balance-card balanced-card">
                                 <div class="card-body text-center">
-                                    <h5>Consumo Mensal</h5>
-                                    <h3 id="monthly-consumption">-</h3>
+                                    <h5><i class="fas fa-balance-scale me-2"></i>Saldo Energético</h5>
+                                    <h3 id="net-balance-display">-</h3>
                                     <small class="text-muted">kWh</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card energy-balance-card">
+                                <div class="card-body text-center">
+                                    <h5><i class="fas fa-chart-line me-2"></i>Status</h5>
+                                    <h3 id="efficiency-status-display">-</h3>
+                                    <small class="text-muted" id="efficiency-status-text">-</small>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Daily/Weekly/Monthly Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Saldo Diário</h5>
+                                    <h3 id="daily-balance">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Consumo: <span id="daily-consumption">-</span> kWh<br>
+                                            Produção: <span id="daily-production">-</span> kWh
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Saldo Semanal</h5>
+                                    <h3 id="weekly-balance">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Consumo: <span id="weekly-consumption">-</span> kWh<br>
+                                            Produção: <span id="weekly-production">-</span> kWh
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5>Saldo Mensal</h5>
+                                    <h3 id="monthly-balance">-</h3>
+                                    <small class="text-muted">kWh</small>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Consumo: <span id="monthly-consumption">-</span> kWh<br>
+                                            Produção: <span id="monthly-production">-</span> kWh
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Energy Balance Chart -->
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Histórico de Consumo</h5>
+                            <h5 class="card-title mb-0">Balanço Energético</h5>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
-                                <canvas id="consumptionHistoryChart"></canvas>
+                                <canvas id="energyBalanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Production Section -->
+                <div id="production-section" class="content-section" style="display: none;">
+                    <!-- Add Solar Panel Form -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Adicionar Inversor Solar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="solarPanelForm">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="panel-name" class="form-label">Nome</label>
+                                        <input type="text" class="form-control" id="panel-name" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="panel-id" class="form-label">ID</label>
+                                        <input type="text" class="form-control" id="panel-id" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="nominal-power" class="form-label">Potência Nominal (kWp)</label>
+                                        <input type="number" class="form-control" id="nominal-power" 
+                                               step="0.1" min="0" placeholder="0.0" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary w-100" onclick="addSolarPanel()">
+                                            <i class="fas fa-plus me-1"></i>
+                                            Adicionar Inversor
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Production Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Total de Inversores</h6>
+                                            <h3 id="total-panels">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-solar-panel fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Potência Total</h6>
+                                            <h3 id="total-nominal-power">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-bolt fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Produção Atual</h6>
+                                            <h3 id="current-production-total">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-sun fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Eficiência Média</h6>
+                                            <h3 id="average-efficiency">-</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-chart-line fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solar Panels List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Inversores Solares</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="solar-panels-list">
+                                <!-- Solar panels will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Energy Management Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-cog me-2"></i>Configuração de Gerenciamento de Energia</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="deficit-threshold" class="form-label">
+                                                    Limiar de Déficit (%)
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="range" class="form-range" id="deficit-threshold" 
+                                                           min="0" max="200" step="5" value="100">
+                                                    <span class="input-group-text" id="deficit-threshold-value">100%</span>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    Percentual mínimo de produção em relação ao consumo para evitar controle automático
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Controle Automático</label>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="auto-control-enabled" checked>
+                                                    <label class="form-check-label" for="auto-control-enabled">
+                                                        Habilitar controle automático de dispositivos
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    Quando desabilitado, apenas alertas serão criados
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Status Atual:</strong>
+                                                <span id="current-production-percentage">-</span>% de produção vs consumo
+                                                <br>
+                                                <small>Dispositivos de prioridade "Baixa" serão desligados automaticamente quando a produção for menor que o limiar configurado.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <button type="button" class="btn btn-primary" onclick="saveEnergyConfig()">
+                                                <i class="fas fa-save me-1"></i>
+                                                Salvar Configuração
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -420,6 +742,14 @@
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label for="device-priority" class="form-label">Prioridade</label>
+                            <select class="form-select" id="device-priority" required>
+                                <option value="alta">Alta</option>
+                                <option value="media">Média</option>
+                                <option value="baixa">Baixa</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label for="max-consumption" class="form-label">Consumo Máximo (kWh)</label>
                             <input type="number" class="form-control" id="max-consumption" step="0.1" min="0" value="10">
                         </div>
@@ -431,6 +761,10 @@
                             <div class="mb-3">
                                 <label for="tuya-key" class="form-label">Chave Local</label>
                                 <input type="text" class="form-control" id="tuya-key">
+                            </div>
+                            <div class="mb-3">
+                                <label for="tuya-version" class="form-label">Versão Tuya</label>
+                                <input type="number" class="form-control" id="tuya-version" step="0.1" min="3.0" max="3.4" value="3.3">
                             </div>
                         </div>
                     </form>
@@ -446,15 +780,163 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
+        // Set CSRF token in cookies for API calls
+        document.cookie = "csrftoken={{ csrf_token }}; path=/";
+    </script>
+    <script>
         // Global variables
-        let consumptionChart, statusChart, consumptionHistoryChart;
+        let consumptionChart, statusChart, consumptionHistoryChart, energyBalanceChart;
         let currentSection = 'dashboard';
+        let authToken = localStorage.getItem('authToken');
+        let refreshToken = localStorage.getItem('refreshToken');
+        let energyBalanceInterval;
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            initializeNavigation();
-            loadDashboard();
+            // Check if user is authenticated
+            if (!authToken) {
+                showLoginModal();
+            } else {
+                initializeNavigation();
+                loadDashboard();
+            }
         });
+        
+        // Authentication functions
+        async function login(username, password) {
+            try {
+                const response = await fetch('/api/v1/auth/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access;
+                    refreshToken = data.refresh;
+                    
+                    // Store tokens in localStorage
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    
+                    // Hide login modal and initialize app
+                    hideLoginModal();
+                    initializeNavigation();
+                    loadDashboard();
+                    
+                    showAlert('Login realizado com sucesso!', 'success');
+                } else {
+                    const errorData = await response.json();
+                    showAlert('Erro no login: ' + (errorData.detail || 'Credenciais inválidas'), 'danger');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('Erro de conexão. Tente novamente.', 'danger');
+            }
+        }
+        
+        async function refreshAuthToken() {
+            if (!refreshToken) {
+                showLoginModal();
+                return false;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/auth/token/refresh/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        refresh: refreshToken
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access;
+                    localStorage.setItem('authToken', authToken);
+                    return true;
+                } else {
+                    // Refresh failed, redirect to login
+                    logout();
+                    return false;
+                }
+            } catch (error) {
+                console.error('Token refresh error:', error);
+                logout();
+                return false;
+            }
+        }
+        
+        function logout() {
+            authToken = null;
+            refreshToken = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            showLoginModal();
+        }
+        
+        function showLoginModal() {
+            // Create login modal if it doesn't exist
+            if (!document.getElementById('loginModal')) {
+                const modalHTML = `
+                    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="loginModalLabel">Login - Energy Manager</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="loginForm">
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label">Usuário</label>
+                                            <input type="text" class="form-control" id="username" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="password" class="form-label">Senha</label>
+                                            <input type="password" class="form-control" id="password" required>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" onclick="handleLogin()">Entrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+        }
+        
+        function hideLoginModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+        
+        function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                login(username, password);
+            } else {
+                showAlert('Por favor, preencha todos os campos', 'warning');
+            }
+        }
         
         // Navigation
         function initializeNavigation() {
@@ -468,6 +950,18 @@
         }
         
         function showSection(section) {
+            // Stop energy balance updates if leaving consumption section
+            if (currentSection === 'consumption' && section !== 'consumption') {
+                if (energyBalanceInterval) {
+                    clearInterval(energyBalanceInterval);
+                    energyBalanceInterval = null;
+                }
+                if (autoGenerationInterval) {
+                    clearInterval(autoGenerationInterval);
+                    autoGenerationInterval = null;
+                }
+            }
+            
             // Hide all sections
             document.querySelectorAll('.content-section').forEach(div => {
                 div.style.display = 'none';
@@ -487,6 +981,7 @@
                 'dashboard': 'Dashboard',
                 'devices': 'Dispositivos',
                 'consumption': 'Consumo',
+                'production': 'Produção',
                 'weather': 'Clima',
                 'alerts': 'Alertas'
             };
@@ -505,6 +1000,9 @@
                 case 'consumption':
                     loadConsumption();
                     break;
+                case 'production':
+                    loadProduction();
+                    break;
                 case 'weather':
                     loadWeather();
                     break;
@@ -516,19 +1014,57 @@
         
         // API Functions
         async function apiCall(url, options = {}) {
+            if (!authToken) {
+                showLoginModal();
+                throw new Error('No authentication token');
+            }
+            
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
                 }
             };
             
-            const response = await fetch(url, {...defaultOptions, ...options});
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            try {
+                const response = await fetch(url, { ...defaultOptions, ...options });
+                
+                // If token expired, try to refresh
+                if (response.status === 401) {
+                    const refreshed = await refreshAuthToken();
+                    if (refreshed) {
+                        // Retry the request with new token
+                        defaultOptions.headers['Authorization'] = `Bearer ${authToken}`;
+                        const retryResponse = await fetch(url, { ...defaultOptions, ...options });
+                        if (!retryResponse.ok) {
+                            throw new Error(`HTTP error! status: ${retryResponse.status}`);
+                        }
+                        
+                        // Handle 204 No Content responses (like DELETE operations)
+                        if (retryResponse.status === 204) {
+                            return null;
+                        }
+                        
+                        return await retryResponse.json();
+                    } else {
+                        throw new Error('Authentication failed');
+                    }
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Handle 204 No Content responses (like DELETE operations)
+                if (response.status === 204) {
+                    return null;
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call error:', error);
+                throw error;
             }
-            
-            return await response.json();
         }
         
         // Dashboard
@@ -556,6 +1092,21 @@
                 // Load recent alerts
                 loadRecentAlerts();
                 
+                // Load auto-control status
+                await loadAutoControlStatus();
+                
+                // Load production summary
+                try {
+                    const productionSummary = await apiCall('/api/v1/solar-panels/current_production/');
+                    // Update production stats if element exists
+                    const productionElement = document.getElementById('dashboard-production');
+                    if (productionElement) {
+                        productionElement.textContent = productionSummary.total_current_production.toFixed(2);
+                    }
+                } catch (error) {
+                    console.log('No production data available yet');
+                }
+                
             } catch (error) {
                 console.error('Error loading dashboard:', error);
                 showAlert('Erro ao carregar dashboard', 'danger');
@@ -569,6 +1120,23 @@
             
             if (consumptionChart) {
                 consumptionChart.destroy();
+            }
+            
+            // Check if there's actual consumption data
+            const hasData = Object.keys(consumptionData).length > 0 && 
+                           Object.values(consumptionData).some(value => value > 0);
+            
+            if (!hasData) {
+                // Show message when no consumption data is available
+                const container = document.querySelector('#consumptionChart').parentElement;
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum consumo registrado</h5>
+                        <p class="text-muted">Adicione dispositivos e aguarde as leituras automáticas para visualizar o gráfico.</p>
+                    </div>
+                `;
+                return;
             }
             
             consumptionChart = new Chart(ctx, {
@@ -686,6 +1254,54 @@
             }
         }
         
+        async function loadAutoControlStatus() {
+            try {
+                // Load devices with auto-control status
+                const devices = await apiCall('/api/v1/devices/');
+                const autoControlledDevices = devices.results.filter(device => device.auto_controlled);
+                
+                // Update auto-controlled count
+                document.getElementById('auto-controlled-count').textContent = autoControlledDevices.length;
+                
+                // Find the most recent auto-control timestamp
+                let lastAutoControlTime = '-';
+                if (autoControlledDevices.length > 0) {
+                    const timestamps = autoControlledDevices
+                        .map(device => device.auto_control_timestamp)
+                        .filter(timestamp => timestamp)
+                        .sort()
+                        .reverse();
+                    
+                    if (timestamps.length > 0) {
+                        const lastTime = new Date(timestamps[0]);
+                        lastAutoControlTime = lastTime.toLocaleString('pt-BR');
+                    }
+                }
+                document.getElementById('last-auto-control-time').textContent = lastAutoControlTime;
+                
+                // Load energy config status
+                try {
+                    const config = await apiCall('/api/v1/energy-config/active/');
+                    if (config) {
+                        document.getElementById('auto-control-status').textContent = config.auto_control_enabled ? 'Ativo' : 'Inativo';
+                        document.getElementById('auto-control-status').className = config.auto_control_enabled ? 'text-success' : 'text-danger';
+                        document.getElementById('auto-control-enabled-status').textContent = config.auto_control_enabled ? 'Habilitado' : 'Desabilitado';
+                    } else {
+                        document.getElementById('auto-control-status').textContent = 'Desconhecido';
+                        document.getElementById('auto-control-status').className = 'text-warning';
+                        document.getElementById('auto-control-enabled-status').textContent = 'Não configurado';
+                    }
+                } catch (error) {
+                    document.getElementById('auto-control-status').textContent = 'Erro';
+                    document.getElementById('auto-control-status').className = 'text-danger';
+                    document.getElementById('auto-control-enabled-status').textContent = 'Erro ao carregar';
+                }
+                
+            } catch (error) {
+                console.error('Error loading auto-control status:', error);
+            }
+        }
+        
         // Devices
         async function loadDevices() {
             showLoading(true);
@@ -714,6 +1330,10 @@
                                 <span class="badge bg-${device.device_type === 'manual' ? 'primary' : device.device_type === 'tuya' ? 'success' : 'info'}">
                                     ${device.device_type}
                                 </span>
+                                <br>
+                                <span class="badge bg-${device.priority === 'alta' ? 'success' : device.priority === 'media' ? 'warning' : 'danger'} mt-1">
+                                    ${device.priority === 'alta' ? 'Alta' : device.priority === 'media' ? 'Média' : 'Baixa'}
+                                </span>
                             </div>
                             <div class="col-md-2">
                                 <div class="text-center">
@@ -733,9 +1353,22 @@
                                 <span class="badge bg-${device.is_active ? 'success' : 'secondary'}">
                                     ${device.is_active ? 'Ativo' : 'Inativo'}
                                 </span>
+                                ${device.auto_controlled ? `
+                                    <br>
+                                    <span class="badge bg-warning mt-1">
+                                        <i class="fas fa-robot"></i> Auto-controlado
+                                    </span>
+                                ` : ''}
                             </div>
                             <div class="col-md-1">
                                 <div class="btn-group">
+                                    ${device.is_controllable || device.device_type === 'tuya' ? `
+                                        <button class="btn btn-sm btn-outline-${device.is_active ? 'warning' : 'success'}" 
+                                                onclick="controlDevice(${device.id}, '${device.is_active ? 'off' : 'on'}')"
+                                                title="${device.is_active ? 'Desligar' : 'Ligar'}">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                    ` : ''}
                                     <button class="btn btn-sm btn-outline-primary" onclick="editDevice(${device.id})">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -750,24 +1383,245 @@
             `).join('');
         }
         
+        function controlDevice(deviceId, action) {
+            apiCall(`/api/v1/devices/devices/${deviceId}/control/`, {
+                method: 'POST',
+                body: JSON.stringify({ action: action })
+            }).then(response => {
+                showAlert(response.message, 'success');
+                // Refresh the current section data
+                if (currentSection === 'devices') {
+                    loadDevices();
+                } else if (currentSection === 'dashboard') {
+                    loadDashboard();
+                }
+            }).catch(error => {
+                showAlert('Erro ao controlar dispositivo: ' + error.message, 'danger');
+            });
+        }
+        
         // Consumption
         async function loadConsumption() {
             showLoading(true);
             try {
-                const stats = await apiCall('/api/v1/readings/stats/');
+                // Load energy configuration
+                await loadEnergyConfig();
                 
-                document.getElementById('daily-consumption').textContent = stats.daily_consumption.toFixed(2);
-                document.getElementById('weekly-consumption').textContent = stats.weekly_consumption.toFixed(2);
-                document.getElementById('monthly-consumption').textContent = stats.monthly_consumption.toFixed(2);
+                // Load energy balance data
+                await loadEnergyBalance();
                 
-                // Load consumption history chart
-                loadConsumptionHistoryChart();
+                // Load energy balance chart with real data
+                await loadEnergyBalanceChart();
+                
+                // Start real-time updates
+                startEnergyBalanceUpdates();
+                
+                // Start automatic generation
+                startAutoGeneration();
                 
             } catch (error) {
                 console.error('Error loading consumption:', error);
                 showAlert('Erro ao carregar dados de consumo', 'danger');
             } finally {
                 showLoading(false);
+            }
+        }
+        
+        // Automatic generation functions
+        let autoGenerationInterval;
+        
+        function startAutoGeneration() {
+            // Clear existing interval
+            if (autoGenerationInterval) {
+                clearInterval(autoGenerationInterval);
+            }
+            
+            // Generate readings every 30 seconds
+            autoGenerationInterval = setInterval(async () => {
+                if (currentSection === 'consumption') {
+                    await generateRandomReadings();
+                }
+            }, 30000);
+        }
+        
+        async function generateRandomReadings() {
+            try {
+                const response = await apiCall('/api/v1/readings/generate_random_reading/', {
+                    method: 'POST'
+                });
+                
+                // Update energy balance display
+                await loadEnergyBalance();
+                
+                // Update energy balance chart with new data
+                await loadEnergyBalanceChart();
+                
+                // Show notification
+                showAlert(`Leituras atualizadas: ${response.total_consumption.toFixed(2)} kWh consumo, ${response.total_production.toFixed(2)} kWh produção`, 'info');
+                
+            } catch (error) {
+                console.error('Error generating random readings:', error);
+            }
+        }
+        
+        async function loadEnergyBalance() {
+            try {
+                // Try to load energy balance without authentication first
+                let balance;
+                try {
+                    balance = await apiCall('/api/v1/readings/energy_balance/');
+                } catch (error) {
+                    // If authentication fails, try without auth token
+                    const response = await fetch('/api/v1/readings/energy_balance/');
+                    if (response.ok) {
+                        balance = await response.json();
+                    } else {
+                        throw error;
+                    }
+                }
+                
+                // Update current values
+                document.getElementById('current-consumption-display').textContent = balance.current_consumption.toFixed(2);
+                document.getElementById('current-production-display').textContent = balance.current_production.toFixed(2);
+                document.getElementById('net-balance-display').textContent = balance.net_balance.toFixed(2);
+                
+                // Update production percentage
+                updateProductionPercentage(balance.current_consumption, balance.current_production);
+                
+                // Update efficiency status
+                const statusElement = document.getElementById('efficiency-status-display');
+                const statusTextElement = document.getElementById('efficiency-status-text');
+                
+                switch(balance.efficiency_status) {
+                    case 'surplus':
+                        statusElement.textContent = '+';
+                        statusElement.className = 'text-success';
+                        statusTextElement.textContent = 'Excedente';
+                        break;
+                    case 'deficit':
+                        statusElement.textContent = '-';
+                        statusElement.className = 'text-danger';
+                        statusTextElement.textContent = 'Déficit';
+                        break;
+                    case 'balanced':
+                        statusElement.textContent = '=';
+                        statusElement.className = 'text-warning';
+                        statusTextElement.textContent = 'Equilibrado';
+                        break;
+                }
+                
+                // Update daily values
+                document.getElementById('daily-consumption').textContent = balance.daily_consumption.toFixed(2);
+                document.getElementById('daily-production').textContent = balance.daily_production.toFixed(2);
+                document.getElementById('daily-balance').textContent = balance.daily_net_balance.toFixed(2);
+                
+                // Update weekly values
+                document.getElementById('weekly-consumption').textContent = balance.weekly_consumption.toFixed(2);
+                document.getElementById('weekly-production').textContent = balance.weekly_production.toFixed(2);
+                document.getElementById('weekly-balance').textContent = balance.weekly_net_balance.toFixed(2);
+                
+                // Update monthly values
+                document.getElementById('monthly-consumption').textContent = balance.monthly_consumption.toFixed(2);
+                document.getElementById('monthly-production').textContent = balance.monthly_production.toFixed(2);
+                document.getElementById('monthly-balance').textContent = balance.monthly_net_balance.toFixed(2);
+                
+            } catch (error) {
+                console.error('Error loading energy balance:', error);
+                showAlert('Erro ao carregar balanço energético', 'danger');
+            }
+        }
+        
+        
+        function startEnergyBalanceUpdates() {
+            // Clear existing interval
+            if (energyBalanceInterval) {
+                clearInterval(energyBalanceInterval);
+            }
+            
+            // Update every 30 seconds
+            energyBalanceInterval = setInterval(async () => {
+                if (currentSection === 'consumption') {
+                    await loadEnergyBalance();
+                }
+            }, 30000);
+        }
+        
+        async function loadEnergyBalanceChart() {
+            const ctx = document.getElementById('energyBalanceChart').getContext('2d');
+            
+            if (energyBalanceChart) {
+                energyBalanceChart.destroy();
+            }
+            
+            try {
+                // Load real data from API
+                let historyData;
+                try {
+                    historyData = await apiCall('/api/v1/readings/energy_balance_history/?days=7');
+                } catch (error) {
+                    // If authentication fails, try without auth token
+                    const response = await fetch('/api/v1/readings/energy_balance_history/?days=7');
+                    if (response.ok) {
+                        historyData = await response.json();
+                    } else {
+                        throw error;
+                    }
+                }
+                
+                // Check if there's actual data
+                if (!historyData.has_data || historyData.devices_with_data.length === 0) {
+                    // Show message when no data is available
+                    const container = document.querySelector('#energyBalanceChart').parentElement;
+                    container.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum dado disponível</h5>
+                            <p class="text-muted">Adicione dispositivos e aguarde as leituras automáticas para visualizar o gráfico.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create chart with real data
+                energyBalanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: historyData.labels,
+                        datasets: historyData.datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading energy balance chart:', error);
+                
+                // Show error message
+                const container = document.querySelector('#energyBalanceChart').parentElement;
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5 class="text-warning">Erro ao carregar dados</h5>
+                        <p class="text-muted">Não foi possível carregar o histórico do balanço energético.</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadEnergyBalanceChart()">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Tentar Novamente
+                        </button>
+                    </div>
+                `;
             }
         }
         
@@ -805,6 +1659,105 @@
             });
         }
         
+        // Energy Management Configuration
+        let energyConfig = null;
+        
+        async function loadEnergyConfig() {
+            try {
+                const response = await apiCall('/api/v1/energy-config/active/');
+                if (response) {
+                    energyConfig = response;
+                    document.getElementById('deficit-threshold').value = response.deficit_threshold_percentage;
+                    document.getElementById('deficit-threshold-value').textContent = response.deficit_threshold_percentage + '%';
+                    document.getElementById('auto-control-enabled').checked = response.auto_control_enabled;
+                } else {
+                    // Create default config if none exists
+                    energyConfig = {
+                        deficit_threshold_percentage: 100.0,
+                        auto_control_enabled: true
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading energy config:', error);
+                // Use default values
+                energyConfig = {
+                    deficit_threshold_percentage: 100.0,
+                    auto_control_enabled: true
+                };
+            }
+        }
+        
+        async function saveEnergyConfig() {
+            const threshold = parseFloat(document.getElementById('deficit-threshold').value);
+            const autoControlEnabled = document.getElementById('auto-control-enabled').checked;
+            
+            try {
+                const configData = {
+                    name: 'Configuração Principal',
+                    deficit_threshold_percentage: threshold,
+                    auto_control_enabled: autoControlEnabled,
+                    is_active: true
+                };
+                
+                if (energyConfig && energyConfig.id) {
+                    // Update existing config
+                    await apiCall(`/api/v1/energy-config/${energyConfig.id}/`, {
+                        method: 'PUT',
+                        body: JSON.stringify(configData)
+                    });
+                } else {
+                    // Create new config
+                    await apiCall('/api/v1/energy-config/', {
+                        method: 'POST',
+                        body: JSON.stringify(configData)
+                    });
+                }
+                
+                showAlert('Configuração salva com sucesso!', 'success');
+                await loadEnergyConfig();
+                
+            } catch (error) {
+                console.error('Error saving energy config:', error);
+                showAlert('Erro ao salvar configuração: ' + error.message, 'danger');
+            }
+        }
+        
+        function updateProductionPercentage(consumption, production) {
+            const percentage = consumption > 0 ? (production / consumption) * 100 : 100;
+            
+            // Safely update production percentage element if it exists
+            const percentageElement = document.getElementById('current-production-percentage');
+            if (percentageElement) {
+                percentageElement.textContent = percentage.toFixed(1);
+            }
+            
+            // Safely update alert color based on threshold if elements exist
+            const thresholdElement = document.getElementById('deficit-threshold');
+            const alertElement = document.querySelector('#consumption-section .alert-info');
+            
+            if (thresholdElement && alertElement) {
+                const threshold = parseFloat(thresholdElement.value);
+                
+                if (percentage < threshold) {
+                    alertElement.className = 'alert alert-warning';
+                } else {
+                    alertElement.className = 'alert alert-info';
+                }
+            }
+        }
+        
+        // Update threshold display when slider changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const thresholdSlider = document.getElementById('deficit-threshold');
+            const thresholdValue = document.getElementById('deficit-threshold-value');
+            
+            if (thresholdSlider && thresholdValue) {
+                thresholdSlider.addEventListener('input', function() {
+                    thresholdValue.textContent = this.value + '%';
+                });
+            }
+        });
+        
         // Weather
         async function loadWeather() {
             showLoading(true);
@@ -812,15 +1765,46 @@
                 const city = document.getElementById('weather-city').value;
                 const [cityName, country] = city.split(',');
                 
-                const weatherData = await apiCall(`/api/v1/forecasts/summary/?city=${cityName}&country=${country}`);
+                // Try to load weather data without authentication first (public endpoint)
+                let weatherData;
+                try {
+                    const response = await fetch(`/api/v1/forecasts/summary/?city=${cityName}&country=${country}`);
+                    if (response.ok) {
+                        weatherData = await response.json();
+                    } else if (response.status === 404) {
+                        // No weather data available, show message to fetch data
+                        displayNoWeatherData();
+                        return;
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } catch (error) {
+                    // Fallback to authenticated API call
+                    weatherData = await apiCall(`/api/v1/forecasts/summary/?city=${cityName}&country=${country}`);
+                }
+                
                 displayWeatherData(weatherData);
                 
             } catch (error) {
                 console.error('Error loading weather:', error);
-                showAlert('Erro ao carregar dados meteorológicos', 'danger');
+                displayNoWeatherData();
             } finally {
                 showLoading(false);
             }
+        }
+        
+        function displayNoWeatherData() {
+            const container = document.getElementById('weather-content');
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle me-2"></i>Nenhum dado meteorológico disponível</h5>
+                    <p>Para visualizar as condições meteorológicas, clique em "Buscar Previsão" para atualizar os dados.</p>
+                    <button class="btn btn-primary" onclick="fetchWeatherData()">
+                        <i class="fas fa-cloud-sun me-1"></i>
+                        Buscar Previsão Agora
+                    </button>
+                </div>
+            `;
         }
         
         function displayWeatherData(data) {
@@ -864,6 +1848,7 @@
             const [cityName, country] = city.split(',');
             
             try {
+                // This requires authentication
                 await apiCall('/api/v1/forecasts/fetch_forecast/', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -877,7 +1862,11 @@
                 
             } catch (error) {
                 console.error('Error fetching weather data:', error);
-                showAlert('Erro ao buscar previsão do tempo', 'danger');
+                if (error.message.includes('No authentication token')) {
+                    showAlert('É necessário fazer login para buscar dados meteorológicos', 'warning');
+                } else {
+                    showAlert('Erro ao buscar previsão do tempo', 'danger');
+                }
             }
         }
         
@@ -954,9 +1943,14 @@
                 name: document.getElementById('device-name').value,
                 device_id: document.getElementById('device-id').value,
                 device_type: document.getElementById('device-type').value,
+                priority: document.getElementById('device-priority').value,
                 max_consumption: parseFloat(document.getElementById('max-consumption').value),
                 tuya_ip: document.getElementById('tuya-ip').value,
-                tuya_local_key: document.getElementById('tuya-key').value
+                tuya_local_key: document.getElementById('tuya-key').value,
+                tuya_version: parseFloat(document.getElementById('tuya-version').value),
+                last_consumption: 0.0,
+                is_active: true,
+                is_controllable: false
             };
             
             apiCall('/api/v1/devices/', {
@@ -966,13 +1960,114 @@
                 showAlert('Dispositivo adicionado com sucesso!', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
                 document.getElementById('addDeviceForm').reset();
+                // Refresh the current section data
                 if (currentSection === 'devices') {
                     loadDevices();
+                } else if (currentSection === 'dashboard') {
+                    loadDashboard();
                 }
             }).catch(error => {
                 console.error('Error adding device:', error);
                 showAlert('Erro ao adicionar dispositivo', 'danger');
             });
+        }
+        
+        function editDevice(deviceId) {
+            // First, get the device data
+            apiCall(`/api/v1/devices/${deviceId}/`).then(device => {
+                // Populate the modal with existing data
+                document.getElementById('device-name').value = device.name;
+                document.getElementById('device-id').value = device.device_id;
+                document.getElementById('device-type').value = device.device_type;
+                document.getElementById('max-consumption').value = device.max_consumption;
+                document.getElementById('tuya-ip').value = device.tuya_ip || '';
+                document.getElementById('tuya-key').value = device.tuya_local_key || '';
+                document.getElementById('tuya-version').value = device.tuya_version || '3.3';
+                
+                // Show/hide Tuya fields based on device type
+                const tuyaFields = document.getElementById('tuya-fields');
+                if (device.device_type === 'tuya') {
+                    tuyaFields.style.display = 'block';
+                } else {
+                    tuyaFields.style.display = 'none';
+                }
+                
+                // Change modal title and button
+                document.querySelector('#addDeviceModal .modal-title').textContent = 'Editar Dispositivo';
+                const addButton = document.querySelector('#addDeviceModal .btn-primary');
+                addButton.textContent = 'Salvar';
+                addButton.onclick = () => updateDevice(deviceId);
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('addDeviceModal'));
+                modal.show();
+                
+            }).catch(error => {
+                console.error('Error loading device:', error);
+                showAlert('Erro ao carregar dados do dispositivo', 'danger');
+            });
+        }
+        
+        function updateDevice(deviceId) {
+            // Get current device data to preserve existing values
+            apiCall(`/api/v1/devices/${deviceId}/`).then(currentDevice => {
+                const formData = {
+                    name: document.getElementById('device-name').value,
+                    device_id: document.getElementById('device-id').value,
+                    device_type: document.getElementById('device-type').value,
+                    max_consumption: parseFloat(document.getElementById('max-consumption').value),
+                    tuya_ip: document.getElementById('tuya-ip').value,
+                    tuya_local_key: document.getElementById('tuya-key').value,
+                    tuya_version: parseFloat(document.getElementById('tuya-version').value),
+                    last_consumption: currentDevice.last_consumption,
+                    is_active: currentDevice.is_active,
+                    is_controllable: currentDevice.is_controllable
+                };
+                
+                return apiCall(`/api/v1/devices/${deviceId}/`, {
+                    method: 'PUT',
+                    body: JSON.stringify(formData)
+                });
+            }).then(() => {
+                showAlert('Dispositivo atualizado com sucesso!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
+                document.getElementById('addDeviceForm').reset();
+                
+                // Reset modal title and button
+                document.querySelector('#addDeviceModal .modal-title').textContent = 'Adicionar Dispositivo';
+                const addButton = document.querySelector('#addDeviceModal .btn-primary');
+                addButton.textContent = 'Adicionar';
+                addButton.onclick = addDevice;
+                
+                // Refresh the current section data
+                if (currentSection === 'devices') {
+                    loadDevices();
+                } else if (currentSection === 'dashboard') {
+                    loadDashboard();
+                }
+            }).catch(error => {
+                console.error('Error updating device:', error);
+                showAlert('Erro ao atualizar dispositivo', 'danger');
+            });
+        }
+        
+        function deleteDevice(deviceId) {
+            if (confirm('Tem certeza que deseja excluir este dispositivo?')) {
+                apiCall(`/api/v1/devices/${deviceId}/`, {
+                    method: 'DELETE'
+                }).then(() => {
+                    showAlert('Dispositivo excluído com sucesso!', 'success');
+                    // Refresh the current section data
+                    if (currentSection === 'devices') {
+                        loadDevices();
+                    } else if (currentSection === 'dashboard') {
+                        loadDashboard();
+                    }
+                }).catch(error => {
+                    console.error('Error deleting device:', error);
+                    showAlert('Erro ao excluir dispositivo', 'danger');
+                });
+            }
         }
         
         // Utility Functions
@@ -1029,6 +2124,9 @@
                 case 'consumption':
                     loadConsumption();
                     break;
+                case 'production':
+                    loadProduction();
+                    break;
                 case 'weather':
                     loadWeather();
                     break;
@@ -1047,6 +2145,361 @@
                 tuyaFields.style.display = 'none';
             }
         });
+        
+        // Reset modal when closed
+        document.getElementById('addDeviceModal').addEventListener('hidden.bs.modal', function() {
+            // Reset modal title and button
+            document.querySelector('#addDeviceModal .modal-title').textContent = 'Adicionar Dispositivo';
+            const addButton = document.querySelector('#addDeviceModal .btn-primary');
+            addButton.textContent = 'Adicionar';
+            addButton.onclick = addDevice;
+            
+            // Reset form
+            document.getElementById('addDeviceForm').reset();
+            
+            // Hide Tuya fields
+            document.getElementById('tuya-fields').style.display = 'none';
+        });
+        
+        // Production Functions
+        async function loadProduction() {
+            showLoading(true);
+            try {
+                await loadSolarPanels();
+                await loadProductionSummary();
+            } catch (error) {
+                console.error('Error loading production:', error);
+                showAlert('Erro ao carregar dados de produção', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function loadSolarPanels() {
+            try {
+                const panels = await apiCall('/api/v1/solar-panels/');
+                displaySolarPanels(panels.results);
+            } catch (error) {
+                console.error('Error loading solar panels:', error);
+                showAlert('Erro ao carregar inversores solares', 'danger');
+            }
+        }
+        
+        function displaySolarPanels(panels) {
+            const container = document.getElementById('solar-panels-list');
+            container.innerHTML = panels.map(panel => `
+                <div class="card device-card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="card-title mb-1">${panel.name}</h6>
+                                <small class="text-muted">${panel.panel_id}</small>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <strong>${panel.nominal_power_kwp.toFixed(2)} kWp</strong>
+                                    <br>
+                                    <small class="text-muted">Potência Nominal</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <strong>${panel.current_production.toFixed(2)} kWh</strong>
+                                    <br>
+                                    <small class="text-muted">Produção Atual</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <strong>${((panel.current_production / panel.nominal_power_kwp) * 100).toFixed(1)}%</strong>
+                                    <br>
+                                    <small class="text-muted">Eficiência</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge bg-${panel.is_active ? 'success' : 'secondary'}">
+                                    ${panel.is_active ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSolarPanel(${panel.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadProductionSummary() {
+            try {
+                const summary = await apiCall('/api/v1/solar-panels/current_production/');
+                
+                document.getElementById('total-panels').textContent = summary.total_panels;
+                document.getElementById('total-nominal-power').textContent = summary.total_nominal_power.toFixed(2);
+                document.getElementById('current-production-total').textContent = summary.total_current_production.toFixed(2);
+                document.getElementById('average-efficiency').textContent = summary.average_efficiency.toFixed(1) + '%';
+            } catch (error) {
+                console.error('Error loading production summary:', error);
+            }
+        }
+        
+        async function addSolarPanel() {
+            const name = document.getElementById('panel-name').value;
+            const panelId = document.getElementById('panel-id').value;
+            const nominalPower = parseFloat(document.getElementById('nominal-power').value);
+            
+            if (!name || !panelId || isNaN(nominalPower)) {
+                showAlert('Por favor, preencha todos os campos corretamente', 'warning');
+                return;
+            }
+            
+            try {
+                const panelData = {
+                    name: name,
+                    panel_id: panelId,
+                    nominal_power_kwp: nominalPower,
+                    is_active: true
+                };
+                
+                await apiCall('/api/v1/solar-panels/', {
+                    method: 'POST',
+                    body: JSON.stringify(panelData)
+                });
+                
+                showAlert('Inversor solar adicionado com sucesso!', 'success');
+                
+                // Clear form
+                document.getElementById('solarPanelForm').reset();
+                
+                // Refresh production data
+                await loadProduction();
+                
+            } catch (error) {
+                console.error('Error adding solar panel:', error);
+                showAlert('Erro ao adicionar inversor solar', 'danger');
+            }
+        }
+        
+        async function deleteSolarPanel(panelId) {
+            if (confirm('Tem certeza que deseja excluir este inversor solar?')) {
+                try {
+                    await apiCall(`/api/v1/solar-panels/${panelId}/`, {
+                        method: 'DELETE'
+                    });
+                    
+                    showAlert('Inversor solar excluído com sucesso!', 'success');
+                    await loadProduction();
+                    
+                } catch (error) {
+                    console.error('Error deleting solar panel:', error);
+                    showAlert('Erro ao excluir inversor solar', 'danger');
+                }
+            }
+        }
+        
+        // Alert System Functions
+        let alertCheckInterval = null;
+        
+        async function checkForAlerts() {
+            try {
+                const response = await apiCall('/api/v1/alerts/?is_read=false&alert_type=medium_priority_action_needed');
+                
+                if (response && response.length > 0) {
+                    showAlertBanner(response.length);
+                    await loadMediumPriorityDevices();
+                } else {
+                    hideAlertBanner();
+                }
+            } catch (error) {
+                console.error('Error checking alerts:', error);
+            }
+        }
+        
+        function showAlertBanner(alertCount) {
+            const banner = document.getElementById('alert-banner');
+            const bannerText = document.getElementById('alert-banner-text');
+            
+            bannerText.textContent = `${alertCount} dispositivo(s) de prioridade média precisa(m) de sua atenção`;
+            banner.style.display = 'block';
+            banner.classList.add('show');
+        }
+        
+        function hideAlertBanner() {
+            const banner = document.getElementById('alert-banner');
+            banner.classList.remove('show');
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 300);
+        }
+        
+        async function loadMediumPriorityDevices() {
+            try {
+                const response = await apiCall('/api/v1/alerts/?is_read=false&alert_type=medium_priority_action_needed');
+                
+                if (response && response.length > 0) {
+                    const devicesList = document.getElementById('medium-priority-devices-list');
+                    devicesList.innerHTML = response.map(alert => `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h6 class="card-title mb-1">${alert.device.name}</h6>
+                                        <small class="text-muted">${alert.device.device_id}</small>
+                                        <br>
+                                        <span class="badge bg-warning">Prioridade Média</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <strong>${alert.device.last_consumption.toFixed(2)} kWh</strong>
+                                            <br>
+                                            <small class="text-muted">Consumo atual</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-sm btn-outline-warning" onclick="controlDevice(${alert.device.id}, 'off')">
+                                                <i class="fas fa-power-off me-1"></i>
+                                                Desligar
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="dismissAlert(${alert.id})">
+                                                <i class="fas fa-times me-1"></i>
+                                                Dispensar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading medium priority devices:', error);
+            }
+        }
+        
+        function showMediumPriorityModal() {
+            const modal = new bootstrap.Modal(document.getElementById('mediumPriorityModal'));
+            modal.show();
+        }
+        
+        async function dismissAlert(alertId) {
+            try {
+                await apiCall(`/api/v1/alerts/${alertId}/mark_as_read/`, {
+                    method: 'POST'
+                });
+                
+                showAlert('Alerta dispensado', 'success');
+                await loadMediumPriorityDevices();
+                await checkForAlerts();
+                
+            } catch (error) {
+                console.error('Error dismissing alert:', error);
+                showAlert('Erro ao dispensar alerta', 'danger');
+            }
+        }
+        
+        async function dismissAllMediumPriorityAlerts() {
+            try {
+                const response = await apiCall('/api/v1/alerts/?is_read=false&alert_type=medium_priority_action_needed');
+                
+                if (response && response.length > 0) {
+                    const promises = response.map(alert => 
+                        apiCall(`/api/v1/alerts/${alert.id}/mark_as_read/`, {
+                            method: 'POST'
+                        })
+                    );
+                    
+                    await Promise.all(promises);
+                    showAlert('Todos os alertas foram dispensados', 'success');
+                    hideAlertBanner();
+                }
+                
+            } catch (error) {
+                console.error('Error dismissing all alerts:', error);
+                showAlert('Erro ao dispensar alertas', 'danger');
+            }
+        }
+        
+        function startAlertChecking() {
+            // Check for alerts every 30 seconds
+            alertCheckInterval = setInterval(checkForAlerts, 30000);
+            
+            // Initial check
+            checkForAlerts();
+        }
+        
+        function stopAlertChecking() {
+            if (alertCheckInterval) {
+                clearInterval(alertCheckInterval);
+                alertCheckInterval = null;
+            }
+        }
+        
+        // Start alert checking when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startAlertChecking();
+        });
     </script>
+
+    <!-- Medium Priority Device Alert Modal -->
+    <div class="modal fade" id="mediumPriorityModal" tabindex="-1" aria-labelledby="mediumPriorityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="mediumPriorityModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Ação Necessária - Dispositivos de Prioridade Média
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Déficit de Produção Detectado!</strong>
+                        <br>
+                        A produção de energia está abaixo do limiar configurado. Dispositivos de prioridade "Baixa" foram desligados automaticamente.
+                        <br>
+                        <strong>Dispositivos de prioridade "Média" precisam de sua decisão:</strong>
+                    </div>
+                    
+                    <div id="medium-priority-devices-list">
+                        <!-- Medium priority devices will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="dismissAllMediumPriorityAlerts()">
+                        <i class="fas fa-times me-1"></i>
+                        Dispensar Todos
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="alert alert-warning alert-dismissible fade" role="alert" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999; margin: 0; border-radius: 0;">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-10">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="alert-banner-text">Alerta de energia</span>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="showMediumPriorityModal()">
+                        Ver Detalhes
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

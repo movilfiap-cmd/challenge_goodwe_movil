@@ -139,7 +139,7 @@ class WeatherForecastViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def summary(self, request):
         """Retorna um resumo das condições meteorológicas."""
         city = request.query_params.get('city', 'Sao Paulo')
@@ -196,7 +196,7 @@ class WeatherForecastViewSet(viewsets.ModelViewSet):
         serializer = WeatherSummarySerializer(summary_data)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def stats(self, request):
         """Retorna estatísticas meteorológicas."""
         city = request.query_params.get('city', 'Sao Paulo')

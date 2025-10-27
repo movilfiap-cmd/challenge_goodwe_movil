@@ -19,14 +19,26 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.shortcuts import render
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
+
+def home_view(request):
+    """Home view that ensures CSRF token is available."""
+    return render(request, 'index.html')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('devices.urls')),
     path('api/v1/', include('consumption.urls')),
     path('api/v1/', include('weather.urls')),
-    path('api/v1/auth/', include('rest_framework_simplejwt.urls')),
-    path('', TemplateView.as_view(template_name='index.html'), name='home'),
+    path('api/v1/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('', home_view, name='home'),
 ]
 
 # Serve static and media files during development
